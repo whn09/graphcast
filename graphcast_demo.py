@@ -123,8 +123,9 @@ params_file_options = [
     # if (name := blob.name.removeprefix("params/"))]  # Drop empty string.
     name for blob in glob.glob("params/**", recursive=True)
     if (name := blob.replace("params/", ""))]  # Drop empty string.
+print("params_file_options:", params_file_options)
 
-params_file = params_file_options[0]  # 0, 1, 2
+params_file = params_file_options[1]  # TODO: 0, 1, 2
 print("params_file:", params_file)
 
 # @title Load the model
@@ -141,6 +142,7 @@ print("Model description:\n", ckpt.description, "\n")
 print("Model license:\n", ckpt.license, "\n")
 
 print("model_config:", model_config)
+print("task_config:", task_config)
 
 # @title Get and filter the list of available example datasets
 
@@ -185,26 +187,26 @@ assert example_batch.dims["time"] >= 3  # 2 for input, >=1 for targets
 print(", ".join([f"{k}: {v}" for k, v in parse_file_parts(dataset_file.removesuffix(".nc")).items()]))
 print("example_batch:", example_batch)
 
-# @title Choose data to plot
+# # @title Choose data to plot
 
-plot_example_variable = "2m_temperature"  # example_batch.data_vars.keys()
-plot_example_level = 500  # example_batch.coords["level"].values
-plot_example_robust = True  # True or False
-plot_example_max_steps = example_batch.dims["time"]  # min=1, max=example_batch.dims["time"]
+# plot_example_variable = "2m_temperature"  # example_batch.data_vars.keys()
+# plot_example_level = 500  # example_batch.coords["level"].values
+# plot_example_robust = True  # True or False
+# plot_example_max_steps = example_batch.dims["time"]  # min=1, max=example_batch.dims["time"]
 
-# @title Plot example data
+# # @title Plot example data
 
-plot_size = 7
+# plot_size = 7
 
-data = {
-    " ": scale(select(example_batch, plot_example_variable, plot_example_level, plot_example_max_steps),
-              robust=plot_example_robust),
-}
-fig_title = plot_example_variable
-if "level" in example_batch[plot_example_variable].coords:
-  fig_title += f" at {plot_example_level} hPa"
+# data = {
+#     " ": scale(select(example_batch, plot_example_variable, plot_example_level, plot_example_max_steps),
+#               robust=plot_example_robust),
+# }
+# fig_title = plot_example_variable
+# if "level" in example_batch[plot_example_variable].coords:
+#   fig_title += f" at {plot_example_level} hPa"
 
-plot_data(data, fig_title, plot_size, plot_example_robust)
+# plot_data(data, fig_title, plot_size, plot_example_robust)
 
 # @title Choose training and eval data to extract
 train_steps = 1  # min=1, max=example_batch.sizes["time"]-2
@@ -341,30 +343,30 @@ predictions = rollout.chunked_prediction(
     forcings=eval_forcings)
 print("predictions:", predictions)
 
-# @title Choose predictions to plot
+# # @title Choose predictions to plot
 
-plot_pred_variable = "2m_temperature"  # predictions.data_vars.keys()
-plot_pred_level = 500  # predictions.coords["level"].values
-plot_pred_robust = True  # True or False
-plot_pred_max_steps = predictions.dims["time"]  # min=1, max=predictions.dims["time"]
+# plot_pred_variable = "2m_temperature"  # predictions.data_vars.keys()
+# plot_pred_level = 500  # predictions.coords["level"].values
+# plot_pred_robust = True  # True or False
+# plot_pred_max_steps = predictions.dims["time"]  # min=1, max=predictions.dims["time"]
 
-# @title Plot predictions
+# # @title Plot predictions
 
-plot_size = 5
-plot_max_steps = min(predictions.dims["time"], plot_pred_max_steps)
+# plot_size = 5
+# plot_max_steps = min(predictions.dims["time"], plot_pred_max_steps)
 
-data = {
-    "Targets": scale(select(eval_targets, plot_pred_variable, plot_pred_level, plot_max_steps), robust=plot_pred_robust),
-    "Predictions": scale(select(predictions, plot_pred_variable, plot_pred_level, plot_max_steps), robust=plot_pred_robust),
-    "Diff": scale((select(eval_targets, plot_pred_variable, plot_pred_level, plot_max_steps) -
-                        select(predictions, plot_pred_variable, plot_pred_level, plot_max_steps)),
-                       robust=plot_pred_robust, center=0),
-}
-fig_title = plot_pred_variable
-if "level" in predictions[plot_pred_variable].coords:
-  fig_title += f" at {plot_pred_level} hPa"
+# data = {
+#     "Targets": scale(select(eval_targets, plot_pred_variable, plot_pred_level, plot_max_steps), robust=plot_pred_robust),
+#     "Predictions": scale(select(predictions, plot_pred_variable, plot_pred_level, plot_max_steps), robust=plot_pred_robust),
+#     "Diff": scale((select(eval_targets, plot_pred_variable, plot_pred_level, plot_max_steps) -
+#                         select(predictions, plot_pred_variable, plot_pred_level, plot_max_steps)),
+#                        robust=plot_pred_robust, center=0),
+# }
+# fig_title = plot_pred_variable
+# if "level" in predictions[plot_pred_variable].coords:
+#   fig_title += f" at {plot_pred_level} hPa"
 
-plot_data(data, fig_title, plot_size, plot_pred_robust)
+# plot_data(data, fig_title, plot_size, plot_pred_robust)
 
 # @title Loss computation (autoregressive loss over multiple steps)
 loss, diagnostics = loss_fn_jitted(
