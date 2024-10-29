@@ -28,6 +28,10 @@ import numpy as np
 import xarray
 
 
+print("JAX devices:", jax.devices())
+print("Default backend:", jax.default_backend())
+print("Available devices:", jax.local_device_count())
+
 def parse_file_parts(file_name):
   return dict(part.split("-", 1) for part in file_name.split("_"))
 
