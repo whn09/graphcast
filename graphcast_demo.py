@@ -26,7 +26,18 @@ import matplotlib.pyplot as plt
 from matplotlib import animation
 import numpy as np
 import xarray
+from jax.profiler import trace
 
+from contextlib import contextmanager
+import time
+
+
+@contextmanager
+def timer(name):
+    start = time.time()
+    yield
+    end = time.time()
+    print(f"{name}: {end - start:.2f} seconds")
 
 print("JAX devices:", jax.devices())
 print("Default backend:", jax.default_backend())
@@ -339,13 +350,15 @@ print("Inputs:  ", eval_inputs.dims.mapping)
 print("Targets: ", eval_targets.dims.mapping)
 print("Forcings:", eval_forcings.dims.mapping)
 
-predictions = rollout.chunked_prediction(
-    run_forward_jitted,
-    rng=jax.random.PRNGKey(0),
-    inputs=eval_inputs,
-    targets_template=eval_targets * np.nan,
-    forcings=eval_forcings)
-print("predictions:", predictions)
+# with trace("/tmp/jax-trace"):  # 生成性能分析文件
+with timer("Prediction"):
+  predictions = rollout.chunked_prediction(
+      run_forward_jitted,
+      rng=jax.random.PRNGKey(0),
+      inputs=eval_inputs,
+      targets_template=eval_targets * np.nan,
+      forcings=eval_forcings)
+  print("predictions:", predictions)
 
 # # @title Choose predictions to plot
 
@@ -372,30 +385,33 @@ print("predictions:", predictions)
 
 # plot_data(data, fig_title, plot_size, plot_pred_robust)
 
-# @title Loss computation (autoregressive loss over multiple steps)
-loss, diagnostics = loss_fn_jitted(
-    rng=jax.random.PRNGKey(0),
-    inputs=train_inputs,
-    targets=train_targets,
-    forcings=train_forcings)
-print("Loss:", float(loss))
+# # @title Loss computation (autoregressive loss over multiple steps)
+# with timer("Loss"):
+#   loss, diagnostics = loss_fn_jitted(
+#       rng=jax.random.PRNGKey(0),
+#       inputs=train_inputs,
+#       targets=train_targets,
+#       forcings=train_forcings)
+#   print("Loss:", float(loss))
 
-# @title Gradient computation (backprop through time)
-loss, diagnostics, next_state, grads = grads_fn_jitted(
-    inputs=train_inputs,
-    targets=train_targets,
-    forcings=train_forcings)
-mean_grad = np.mean(jax.tree_util.tree_flatten(jax.tree_util.tree_map(lambda x: np.abs(x).mean(), grads))[0])
-print(f"Loss: {loss:.4f}, Mean |grad|: {mean_grad:.6f}")
+# # @title Gradient computation (backprop through time)
+# with timer("Grads"):
+#   loss, diagnostics, next_state, grads = grads_fn_jitted(
+#       inputs=train_inputs,
+#       targets=train_targets,
+#       forcings=train_forcings)
+#   mean_grad = np.mean(jax.tree_util.tree_flatten(jax.tree_util.tree_map(lambda x: np.abs(x).mean(), grads))[0])
+#   print(f"Loss: {loss:.4f}, Mean |grad|: {mean_grad:.6f}")
 
-# @title Autoregressive rollout (keep the loop in JAX)
-print("Inputs:  ", train_inputs.dims.mapping)
-print("Targets: ", train_targets.dims.mapping)
-print("Forcings:", train_forcings.dims.mapping)
+# # @title Autoregressive rollout (keep the loop in JAX)
+# print("Inputs:  ", train_inputs.dims.mapping)
+# print("Targets: ", train_targets.dims.mapping)
+# print("Forcings:", train_forcings.dims.mapping)
 
-predictions = run_forward_jitted(
-    rng=jax.random.PRNGKey(0),
-    inputs=train_inputs,
-    targets_template=train_targets * np.nan,
-    forcings=train_forcings)
-print("predictions:", predictions)
+# with timer("Prediction"):
+#   predictions = run_forward_jitted(
+#       rng=jax.random.PRNGKey(0),
+#       inputs=train_inputs,
+#       targets_template=train_targets * np.nan,
+#       forcings=train_forcings)
+#   print("predictions:", predictions)
