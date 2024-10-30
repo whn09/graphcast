@@ -181,10 +181,14 @@ def data_valid_for_model(
       )
   )
 
+valid_dataset_file_options = []
 for option in dataset_file_options:
     if data_valid_for_model(option, model_config, task_config):
-        dataset_file = option
-        break
+        # dataset_file = option
+        # break
+        valid_dataset_file_options.append(option)
+print('valid_dataset_file_options:', valid_dataset_file_options)
+dataset_file = valid_dataset_file_options[-1]  # TODO: select one file
 print("dataset_file:", dataset_file)
 
 # @title Load weather data
@@ -244,6 +248,10 @@ print("Train Forcings:", train_forcings.dims.mapping)
 print("Eval Inputs:   ", eval_inputs.dims.mapping)
 print("Eval Targets:  ", eval_targets.dims.mapping)
 print("Eval Forcings: ", eval_forcings.dims.mapping)
+
+print('train_inputs:', train_inputs)
+print('train_targets:', train_targets)
+print('train_forcings:', train_forcings)
 
 # @title Load normalization data
 
@@ -350,15 +358,16 @@ print("Inputs:  ", eval_inputs.dims.mapping)
 print("Targets: ", eval_targets.dims.mapping)
 print("Forcings:", eval_forcings.dims.mapping)
 
-# with trace("/tmp/jax-trace"):  # 生成性能分析文件
-with timer("Prediction"):
-  predictions = rollout.chunked_prediction(
-      run_forward_jitted,
-      rng=jax.random.PRNGKey(0),
-      inputs=eval_inputs,
-      targets_template=eval_targets * np.nan,
-      forcings=eval_forcings)
-  print("predictions:", predictions)
+for i in range(10):  # First round: 79.15 seconds, After first round: 0.90 seconds
+  # with trace("/tmp/jax-trace"):  # 生成性能分析文件
+  with timer("Prediction"):
+    predictions = rollout.chunked_prediction(
+        run_forward_jitted,
+        rng=jax.random.PRNGKey(0),
+        inputs=eval_inputs,
+        targets_template=eval_targets * np.nan,
+        forcings=eval_forcings)
+    print("predictions:", predictions)
 
 # # @title Choose predictions to plot
 
