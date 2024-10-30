@@ -151,7 +151,7 @@ def process_month(select_month):
 
     merge_start = time.time()
     surface_ds = xarray.merge([msl_ds.rename({'MSL': 'mean_sea_level_pressure'}), u10_ds.rename(
-        {'VAR_10U': '10m_u_component_of_wind'}), v10_ds.rename({'VAR_10V': '10m_v_component_of_wind'}), t2m_ds.rename({'VAR_2T': '2m_temperature'}), mtpr_ds.rename({'MTPR': 'total_precipitation_6hr'}), tisr_ds.rename({'TISR': 'toa_incident_solar_radiation'})], compat='override')
+        {'VAR_10U': '10m_u_component_of_wind'}), v10_ds.rename({'VAR_10V': '10m_v_component_of_wind'}), t2m_ds.rename({'VAR_2T': '2m_temperature'}), mtpr_ds.rename({'MTPR': 'total_precipitation_6hr'}), tisr_ds.rename({'TISR': 'toa_incident_solar_radiation'})], compat='override').drop_vars(['utc_date'])
     # surface_ds.to_netcdf(f'surface/surface_{select_month}.nc')
     merge_end = time.time()
     print('merge time:', merge_end-merge_start)
@@ -213,7 +213,7 @@ def process_date(select_date):
     w_ds = w_ds.sel(level=pressure_levels)
 
     upper_ds = xarray.merge([z_ds.rename({'Z': 'geopotential'}), q_ds.rename({'Q': 'specific_humidity'}), t_ds.rename(
-        {'T': 'temperature'}), u_ds.rename({'U': 'u_component_of_wind'}), v_ds.rename({'V': 'v_component_of_wind'}), w_ds.rename({'W': 'vertical_velocity'})])
+        {'T': 'temperature'}), u_ds.rename({'U': 'u_component_of_wind'}), v_ds.rename({'V': 'v_component_of_wind'}), w_ds.rename({'W': 'vertical_velocity'})]).drop_vars(['utc_date'])
     # upper_ds.to_netcdf(f'upper/upper_{select_date}.nc')
 
     for h in tqdm(range(24)):
