@@ -555,7 +555,7 @@ def print_metrics(metrics):
             print(f"  ACC:  {var_metrics['acc']:.6f}")
 
 # 计算指标
-metrics = calculate_metrics(predictions, train_targets)
+metrics = calculate_metrics(predictions, eval_targets)
 
 # 打印结果
 print_metrics(metrics)
