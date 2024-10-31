@@ -181,14 +181,15 @@ def data_valid_for_model(
       )
   )
 
-valid_dataset_file_options = []
-for option in dataset_file_options:
-    if data_valid_for_model(option, model_config, task_config):
-        # dataset_file = option
-        # break
-        valid_dataset_file_options.append(option)
-print('valid_dataset_file_options:', valid_dataset_file_options)
-dataset_file = valid_dataset_file_options[-1]  # TODO: select one file
+# valid_dataset_file_options = []
+# for option in dataset_file_options:
+#     if data_valid_for_model(option, model_config, task_config):
+#         # dataset_file = option
+#         # break
+#         valid_dataset_file_options.append(option)
+# print('valid_dataset_file_options:', valid_dataset_file_options)
+# dataset_file = valid_dataset_file_options[-1]  # TODO: select one file
+dataset_file = 'source-fake_date-2022-01-01_res-0.25_levels-13_steps-01.nc'  # TODO: use self constructed nc file
 print("dataset_file:", dataset_file)
 
 # @title Load weather data
@@ -198,8 +199,9 @@ if not data_valid_for_model(dataset_file, model_config, task_config):
       "Invalid dataset file, rerun the cell above and choose a valid dataset file.")
 
 # with gcs_bucket.blob(f"dataset/{dataset_file.value}").open("rb") as f:
-with open(f"dataset/{dataset_file}", "rb") as f:
-  example_batch = xarray.load_dataset(f).compute()
+# with open(f"dataset/{dataset_file}", "rb") as f:
+#   example_batch = xarray.load_dataset(f).compute()
+example_batch = xarray.load_dataset(f"dataset/{dataset_file}").compute()
 
 assert example_batch.dims["time"] >= 3  # 2 for input, >=1 for targets
 
