@@ -30,6 +30,7 @@ from jax.profiler import trace
 
 from contextlib import contextmanager
 import time
+from scipy import stats
 
 
 @contextmanager
@@ -360,7 +361,7 @@ print("Inputs:  ", eval_inputs.dims.mapping)
 print("Targets: ", eval_targets.dims.mapping)
 print("Forcings:", eval_forcings.dims.mapping)
 
-for i in range(10):  # First round: 79.15 seconds, After first round: 0.90 seconds
+for i in range(3):  # First round: 79.15 seconds, After first round: 0.90 seconds
   # with trace("/tmp/jax-trace"):  # 生成性能分析文件
   with timer("Prediction"):
     predictions = rollout.chunked_prediction(
@@ -426,3 +427,148 @@ for i in range(10):  # First round: 79.15 seconds, After first round: 0.90 secon
 #       targets_template=train_targets * np.nan,
 #       forcings=train_forcings)
 #   print("predictions:", predictions)
+
+
+def calculate_metrics(pred_ds, true_ds):
+    """
+    计算每个变量的RMSE和ACC，对有level的变量分别计算每个level的指标
+    
+    Parameters:
+    -----------
+    pred_ds : xarray.Dataset
+        预测数据集
+    true_ds : xarray.Dataset
+        真实数据集
+    
+    Returns:
+    --------
+    dict
+        包含每个变量（和level）的RMSE和ACC的字典
+    """
+    metrics = {}
+    
+    # 获取所有变量名
+    variables = list(pred_ds.data_vars)
+    
+    for var in variables:
+        pred_var = pred_ds[var]
+        true_var = true_ds[var]
+        
+        # 检查变量是否包含level维度
+        if 'level' in pred_var.dims:
+            metrics[var] = {'by_level': {}}
+            
+            # 对每个level分别计算
+            for lev in pred_var.level.values:
+                pred_level = pred_var.sel(level=lev)
+                true_level = true_var.sel(level=lev)
+                
+                # 计算该level的指标
+                metrics[var]['by_level'][int(lev)] = calculate_single_metric(
+                    pred_level.squeeze(), 
+                    true_level.squeeze()
+                )
+            
+            # 计算所有level的平均指标
+            all_rmse = np.mean([m['rmse'] for m in metrics[var]['by_level'].values()])
+            all_acc = np.mean([m['acc'] for m in metrics[var]['by_level'].values()])
+            metrics[var]['all_levels'] = {'rmse': all_rmse, 'acc': all_acc}
+            
+        else:
+            # 对没有level的变量直接计算
+            metrics[var] = calculate_single_metric(
+                pred_var.squeeze(), 
+                true_var.squeeze()
+            )
+    
+    return metrics
+
+def calculate_single_metric(pred, true):
+    """
+    计算单个字段的RMSE和ACC
+    
+    Parameters:
+    -----------
+    pred : xarray.DataArray
+        预测值
+    true : xarray.DataArray
+        真实值
+    
+    Returns:
+    --------
+    dict
+        包含RMSE和ACC的字典
+    """
+    # 确保数据形状匹配
+    if pred.shape != true.shape:
+        raise ValueError(f"Shape mismatch: pred {pred.shape} vs true {true.shape}")
+    
+    # 去除batch维度如果存在
+    if 'batch' in pred.dims:
+        pred = pred.squeeze('batch')
+        true = true.squeeze('batch')
+    
+    # 将数据转换为numpy数组并展平
+    pred_flat = pred.values.flatten()
+    true_flat = true.values.flatten()
+    
+    # 计算RMSE
+    rmse = np.sqrt(np.mean((pred_flat - true_flat) ** 2))
+    
+    # 计算ACC (Anomaly Correlation Coefficient)
+    pred_anom = pred_flat - np.mean(pred_flat)
+    true_anom = true_flat - np.mean(true_flat)
+    
+    # 使用scipy.stats计算相关系数
+    acc, _ = stats.pearsonr(pred_anom, true_anom)
+    
+    return {'rmse': rmse, 'acc': acc}
+
+def print_metrics(metrics):
+    """
+    打印评估指标
+    
+    Parameters:
+    -----------
+    metrics : dict
+        calculate_metrics函数返回的指标字典
+    """
+    print("\n评估指标汇总:")
+    print("-" * 60)
+    
+    for var_name, var_metrics in metrics.items():
+        print(f"\n变量: {var_name}")
+        print("-" * 40)
+        
+        if 'by_level' in var_metrics:
+            print("各层级指标:")
+            for level, level_metrics in var_metrics['by_level'].items():
+                print(f"  Level {level}:")
+                print(f"    RMSE: {level_metrics['rmse']:.6f}")
+                print(f"    ACC:  {level_metrics['acc']:.6f}")
+            
+            print("\n  所有层级平均:")
+            print(f"    RMSE: {var_metrics['all_levels']['rmse']:.6f}")
+            print(f"    ACC:  {var_metrics['all_levels']['acc']:.6f}")
+        else:
+            print(f"  RMSE: {var_metrics['rmse']:.6f}")
+            print(f"  ACC:  {var_metrics['acc']:.6f}")
+
+# 计算指标
+metrics = calculate_metrics(predictions, train_targets)
+
+# 打印结果
+print_metrics(metrics)
+
+# 如果需要访问特定变量的指标
+# 对于没有level的变量
+rmse = metrics['2m_temperature']['rmse']
+acc = metrics['2m_temperature']['acc']
+print(f'2m_temperature: rmse={rmse}, acc={acc}')
+
+# 对于有level的变量
+# 访问特定level的指标
+level_50_metrics = metrics['temperature']['by_level'][50]
+# 访问所有level的平均指标
+avg_metrics = metrics['temperature']['all_levels']
+print(f'temperature: level_50_metrics={level_50_metrics}, avg_metrics={avg_metrics}')
