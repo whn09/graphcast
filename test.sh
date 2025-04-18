@@ -19,4 +19,10 @@
 #   "gs://dm_graphcast/stats" \
 #   .
 
+# pip install s5cmd
+# s5cmd cp s3://datalab/nsf-ncar-era5/surface/surface_*.nc /opt/dlami/nvme/surface/
+# s5cmd cp s3://datalab/nsf-ncar-era5/upper/upper_*.nc /opt/dlami/nvme/upper/
+
+# python merge_era5.py
+
 python graphcast_demo.py
