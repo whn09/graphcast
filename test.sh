@@ -7,7 +7,7 @@
 # pip install tenacity
 
 # ./download_era5.sh
-# python convert_era5.py
+# cd /opt/dlami/nvme/ && python /home/ubuntu/graphcast/convert_era5.py
 
 # pip install gsutil
 # /opt/pytorch/bin/gsutil -m cp -r \
