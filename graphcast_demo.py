@@ -141,7 +141,7 @@ params_file_options = [
     if (name := blob.replace("params/", ""))]  # Drop empty string.
 print("params_file_options:", params_file_options)
 
-params_file = params_file_options[1]  # TODO: 0, 1, 2
+params_file = 'GraphCast_operational - ERA5-HRES 1979-2021 - resolution 0.25 - pressure levels 13 - mesh 2to6 - precipitation output only.npz'  # params_file_options[1]  # TODO: 0, 1, 2
 print("params_file:", params_file)
 
 # @title Load the model
@@ -182,15 +182,15 @@ def data_valid_for_model(
       )
   )
 
-# valid_dataset_file_options = []
-# for option in dataset_file_options:
-#     if data_valid_for_model(option, model_config, task_config):
-#         # dataset_file = option
-#         # break
-#         valid_dataset_file_options.append(option)
-# print('valid_dataset_file_options:', valid_dataset_file_options)
-# dataset_file = valid_dataset_file_options[-1]  # TODO: select one file
-dataset_file = 'source-fake_date-2022-01-01_res-0.25_levels-13_steps-01.nc'  # TODO: use self constructed nc file
+valid_dataset_file_options = []
+for option in dataset_file_options:
+    if data_valid_for_model(option, model_config, task_config):
+        # dataset_file = option
+        # break
+        valid_dataset_file_options.append(option)
+print('valid_dataset_file_options:', valid_dataset_file_options)
+dataset_file = 'source-hres_date-2022-01-01_res-0.25_levels-13_steps-01.nc'  # valid_dataset_file_options[-1]  # TODO: select one file
+# dataset_file = 'source-fake_date-2022-01-01_res-0.25_levels-13_steps-01.nc'  # TODO: use self constructed nc file
 print("dataset_file:", dataset_file)
 
 # @title Load weather data
@@ -361,6 +361,7 @@ print("Inputs:  ", eval_inputs.dims.mapping)
 print("Targets: ", eval_targets.dims.mapping)
 print("Forcings:", eval_forcings.dims.mapping)
 
+lead_time = 10
 for i in range(3):  # First round: 79.15 seconds, After first round: 0.90 seconds
   # with trace("/tmp/jax-trace"):  # 生成性能分析文件
   with timer("Prediction"):
@@ -370,7 +371,7 @@ for i in range(3):  # First round: 79.15 seconds, After first round: 0.90 second
         inputs=eval_inputs,
         targets_template=eval_targets * np.nan,
         forcings=eval_forcings)
-    print("predictions:", predictions)
+    print("i:", i, "predictions:", predictions)
 
 # # @title Choose predictions to plot
 
@@ -565,6 +566,14 @@ print_metrics(metrics)
 rmse = metrics['2m_temperature']['rmse']
 acc = metrics['2m_temperature']['acc']
 print(f'2m_temperature: rmse={rmse}, acc={acc}')
+
+rmse = metrics['10m_u_component_of_wind']['rmse']
+acc = metrics['10m_u_component_of_wind']['acc']
+print(f'10m_u_component_of_wind: rmse={rmse}, acc={acc}')
+
+rmse = metrics['10m_v_component_of_wind']['rmse']
+acc = metrics['10m_v_component_of_wind']['acc']
+print(f'10m_v_component_of_wind: rmse={rmse}, acc={acc}')
 
 # 对于有level的变量
 # 访问特定level的指标

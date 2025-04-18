@@ -9,4 +9,14 @@
 # ./download_era5.sh
 # python convert_era5.py
 
+# pip install gsutil
+# /opt/pytorch/bin/gsutil -m cp -r \
+#   "gs://dm_graphcast/LICENSE" \
+#   "gs://dm_graphcast/dataset" \
+#   "gs://dm_graphcast/gencast" \
+#   "gs://dm_graphcast/graphcast" \
+#   "gs://dm_graphcast/params" \
+#   "gs://dm_graphcast/stats" \
+#   .
+
 python graphcast_demo.py
