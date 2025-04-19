@@ -78,7 +78,7 @@ def accumulate_precipitation(base_ds, other_datasets):
     
     # 累加每个数据集的降水量
     for ds in other_datasets:
-        result_ds['total_precipitation_6hr'] += ds['total_precipitation_6hr']
+        result_ds['total_precipitation_6hr'].values += ds['total_precipitation_6hr'].values
     
     return result_ds
 
@@ -252,11 +252,12 @@ if __name__ == '__main__':
     surface_ds1_5 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2021123123.nc')
     other_surface_dss.append(surface_ds1_5)
     surface_ds1 = accumulate_precipitation(surface_ds1, other_surface_dss)
+    # print('surface_ds1:', surface_ds1.total_precipitation_6hr)
     merged_ds1 = merge_surface_upper(surface_ds1, upper_ds1)
     merged_dss.append(merged_ds1)
 
     upper_ds2 = xarray.open_dataset('/opt/dlami/nvme/upper/upper_2022010106.nc')
-    surface_ds2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010100.nc')
+    surface_ds2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010106.nc')
     other_surface_dss = []
     surface_ds2_1 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010101.nc')
     other_surface_dss.append(surface_ds2_1)
@@ -269,6 +270,7 @@ if __name__ == '__main__':
     surface_ds2_5 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010105.nc')
     other_surface_dss.append(surface_ds2_5)
     surface_ds2 = accumulate_precipitation(surface_ds2, other_surface_dss)
+    # print('surface_ds2:', surface_ds2.total_precipitation_6hr)
     merged_ds2 = merge_surface_upper(surface_ds2, upper_ds2)
     merged_dss.append(merged_ds2)
 
@@ -286,6 +288,7 @@ if __name__ == '__main__':
     surface_ds3_5 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010111.nc')
     other_surface_dss.append(surface_ds3_5)
     surface_ds3 = accumulate_precipitation(surface_ds3, other_surface_dss)
+    # print('surface_ds3:', surface_ds3.total_precipitation_6hr)
     merged_ds3 = merge_surface_upper(surface_ds3, upper_ds3)
     merged_dss.append(merged_ds3)
 
