@@ -97,16 +97,16 @@ def data_valid_for_model(
 			)
 	)
 
-valid_dataset_file_options = []
-for option in dataset_file_options:
-		if data_valid_for_model(option, model_config, task_config):
-				# dataset_file = option
-				# break
-				valid_dataset_file_options.append(option)
-print('valid_dataset_file_options:', valid_dataset_file_options)
+# valid_dataset_file_options = []
+# for option in dataset_file_options:
+# 		if data_valid_for_model(option, model_config, task_config):
+# 				# dataset_file = option
+# 				# break
+# 				valid_dataset_file_options.append(option)
+# print('valid_dataset_file_options:', valid_dataset_file_options)
 # dataset_file = valid_dataset_file_options[1]	# TODO: select one file
-dataset_file = 'source-hres_date-2022-01-01_res-0.25_levels-13_steps-04.nc'
-# dataset_file = 'source-fake_date-2022-01-01_res-0.25_levels-13_steps-01.nc'	# TODO: use self constructed nc file
+# dataset_file = 'source-hres_date-2022-01-01_res-0.25_levels-13_steps-04.nc'
+dataset_file = 'source-fake_date-2022-01-01_res-0.25_levels-13_steps-01.nc'	# TODO: use self constructed nc file
 print("dataset_file:", dataset_file)
 
 # @title Load weather data
@@ -459,13 +459,13 @@ for i in range(eval_steps):
     metrics = calculate_metrics(predictions, eval_targets)
 
 	# 打印结果
-    print_metrics(metrics)
+    # print_metrics(metrics)
 
 	# 如果需要访问特定变量的指标
 	# 对于没有level的变量
-    rmse = metrics['2m_temperature']['rmse']
-    acc = metrics['2m_temperature']['acc']
-    print(f'2m_temperature: rmse={rmse}, acc={acc}')
+    # rmse = metrics['2m_temperature']['rmse']
+    # acc = metrics['2m_temperature']['acc']
+    # print(f'2m_temperature: rmse={rmse}, acc={acc}')
 
     rmse = metrics['10m_u_component_of_wind']['rmse']
     acc = metrics['10m_u_component_of_wind']['acc']
@@ -475,12 +475,12 @@ for i in range(eval_steps):
     acc = metrics['10m_v_component_of_wind']['acc']
     print(f'10m_v_component_of_wind: rmse={rmse}, acc={acc}')
 
-	# 对于有level的变量
-	# 访问特定level的指标
-    level_50_metrics = metrics['temperature']['by_level'][50]
-	# 访问所有level的平均指标
-    avg_metrics = metrics['temperature']['all_levels']
-    print(f'temperature: level_50_metrics={level_50_metrics}, avg_metrics={avg_metrics}')
+	# # 对于有level的变量
+	# # 访问特定level的指标
+    # level_50_metrics = metrics['temperature']['by_level'][50]
+	# # 访问所有level的平均指标
+    # avg_metrics = metrics['temperature']['all_levels']
+    # print(f'temperature: level_50_metrics={level_50_metrics}, avg_metrics={avg_metrics}')
 
     # 创建新的时间点
     new_time = new_example_batch.time.values[-2] + time_step
