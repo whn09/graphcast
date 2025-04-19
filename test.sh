@@ -25,4 +25,5 @@
 
 # python merge_era5.py
 
-python graphcast_demo.py
+# python graphcast_demo.py
+python graphcast_multi_demo.py

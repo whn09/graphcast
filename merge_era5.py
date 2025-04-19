@@ -146,13 +146,42 @@ def compare_datasets(ds1, ds2, rtol=1e-05, atol=1e-08):
     # 对比共同变量的值
     common_vars = vars1 & vars2
     results['detailed_differences']['variable_values'] = {}
+    results['percent_differences'] = {}  # 新增：存储百分比差异
     
     for var in common_vars:
         try:
             xarray.testing.assert_allclose(ds1[var], ds2[var], rtol=rtol, atol=atol)
             results['detailed_differences']['variable_values'][var] = 'equal'
+            results['percent_differences'][var] = 0.0  # 如果值相等，百分比差异为0
         except AssertionError as e:
             results['detailed_differences']['variable_values'][var] = str(e)
+            
+            # 计算百分比差异
+            # 1. 计算绝对差异
+            abs_diff = abs(ds1[var] - ds2[var])
+            
+            # 2. 计算百分比差异（相对于ds1）
+            # 避免除以0：当ds1的值为0时，使用小数替代
+            denominator = ds1[var].where(ds1[var] != 0, 1e-10)
+            percent_diff = (abs_diff / abs(denominator)) * 100
+            
+            # 3. 计算统计数据
+            percent_stats = {
+                'mean': float(percent_diff.mean().values),
+                'median': float(percent_diff.median().values) if hasattr(percent_diff, 'median') else float(np.nanmedian(percent_diff.values)),
+                'max': float(percent_diff.max().values),
+                'min': float(percent_diff.min().values),
+                'std': float(percent_diff.std().values) if hasattr(percent_diff, 'std') else float(np.nanstd(percent_diff.values))
+            }
+            
+            # 4. 存储结果
+            results['percent_differences'][var] = percent_stats
+            
+            # 5. 可选：标记差异较大的区域
+            # 如果要标识差异大于某个阈值的区域，可以取消下面的注释
+            # large_diff = percent_diff > 10  # 例如标记差异超过10%的区域
+            # if large_diff.any():
+            #     results['percent_differences'][var]['large_diff_locations'] = large_diff
     
     return results
 
@@ -193,6 +222,13 @@ def print_comparison_results(results):
         print(f"{var}: {'相同' if result == 'equal' else '不同'}")
         if result != 'equal':
             print(f"  差异详情: {result}")
+            
+    # 打印各变量的百分比差异
+    for var, diff in results['percent_differences'].items():
+        if diff == 0.0:
+            print(f"{var}: 完全相同")
+        else:
+            print(f"{var}: 平均差异 {diff['mean']:.2f}%, 最大差异 {diff['max']:.2f}%")
 
 if __name__ == '__main__':
     ds = xarray.open_dataset("dataset/source-era5_date-2022-01-01_res-0.25_levels-13_steps-01.nc")
@@ -205,32 +241,32 @@ if __name__ == '__main__':
     upper_ds1 = xarray.open_dataset('/opt/dlami/nvme/upper/upper_2022010100.nc')
     surface_ds1 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010100.nc')
     other_surface_dss = []
-    surface_ds1_1 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010101.nc')
+    surface_ds1_1 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2021123119.nc')
     other_surface_dss.append(surface_ds1_1)
-    surface_ds1_2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010102.nc')
+    surface_ds1_2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2021123120.nc')
     other_surface_dss.append(surface_ds1_2)
-    surface_ds1_3 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010103.nc')
+    surface_ds1_3 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2021123121.nc')
     other_surface_dss.append(surface_ds1_3)
-    surface_ds1_4 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010104.nc')
+    surface_ds1_4 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2021123122.nc')
     other_surface_dss.append(surface_ds1_4)
-    surface_ds1_5 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010105.nc')
+    surface_ds1_5 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2021123123.nc')
     other_surface_dss.append(surface_ds1_5)
     surface_ds1 = accumulate_precipitation(surface_ds1, other_surface_dss)
     merged_ds1 = merge_surface_upper(surface_ds1, upper_ds1)
     merged_dss.append(merged_ds1)
 
     upper_ds2 = xarray.open_dataset('/opt/dlami/nvme/upper/upper_2022010106.nc')
-    surface_ds2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010106.nc')
+    surface_ds2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010100.nc')
     other_surface_dss = []
-    surface_ds2_1 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010107.nc')
+    surface_ds2_1 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010101.nc')
     other_surface_dss.append(surface_ds2_1)
-    surface_ds2_2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010108.nc')
+    surface_ds2_2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010102.nc')
     other_surface_dss.append(surface_ds2_2)
-    surface_ds2_3 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010109.nc')
+    surface_ds2_3 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010103.nc')
     other_surface_dss.append(surface_ds2_3)
-    surface_ds2_4 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010110.nc')
+    surface_ds2_4 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010104.nc')
     other_surface_dss.append(surface_ds2_4)
-    surface_ds2_5 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010111.nc')
+    surface_ds2_5 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010105.nc')
     other_surface_dss.append(surface_ds2_5)
     surface_ds2 = accumulate_precipitation(surface_ds2, other_surface_dss)
     merged_ds2 = merge_surface_upper(surface_ds2, upper_ds2)
@@ -239,21 +275,19 @@ if __name__ == '__main__':
     upper_ds3 = xarray.open_dataset('/opt/dlami/nvme/upper/upper_2022010112.nc')
     surface_ds3 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010112.nc')
     other_surface_dss = []
-    surface_ds3_1 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010113.nc')
+    surface_ds3_1 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010107.nc')
     other_surface_dss.append(surface_ds3_1)
-    surface_ds3_2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010114.nc')
+    surface_ds3_2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010108.nc')
     other_surface_dss.append(surface_ds3_2)
-    surface_ds3_3 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010115.nc')
+    surface_ds3_3 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010109.nc')
     other_surface_dss.append(surface_ds3_3)
-    surface_ds3_4 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010116.nc')
+    surface_ds3_4 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010110.nc')
     other_surface_dss.append(surface_ds3_4)
-    surface_ds3_5 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010117.nc')
+    surface_ds3_5 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010111.nc')
     other_surface_dss.append(surface_ds3_5)
     surface_ds3 = accumulate_precipitation(surface_ds3, other_surface_dss)
     merged_ds3 = merge_surface_upper(surface_ds3, upper_ds3)
     merged_dss.append(merged_ds3)
-
-    # TODO: should consider total_precipitation_6hr
 
     geopotential_at_surface = xarray.open_dataset('geopotential_at_surface-0.25.nc')
     land_sea_mask = xarray.open_dataset('land_sea_mask-0.25.nc')
