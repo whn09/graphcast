@@ -182,15 +182,15 @@ def data_valid_for_model(
       )
   )
 
-valid_dataset_file_options = []
-for option in dataset_file_options:
-    if data_valid_for_model(option, model_config, task_config):
-        # dataset_file = option
-        # break
-        valid_dataset_file_options.append(option)
-print('valid_dataset_file_options:', valid_dataset_file_options)
-dataset_file = 'source-hres_date-2022-01-01_res-0.25_levels-13_steps-01.nc'  # valid_dataset_file_options[-1]  # TODO: select one file
-# dataset_file = 'source-fake_date-2022-01-01_res-0.25_levels-13_steps-01.nc'  # TODO: use self constructed nc file
+# valid_dataset_file_options = []
+# for option in dataset_file_options:
+#     if data_valid_for_model(option, model_config, task_config):
+#         # dataset_file = option
+#         # break
+#         valid_dataset_file_options.append(option)
+# print('valid_dataset_file_options:', valid_dataset_file_options)
+# dataset_file = 'source-hres_date-2022-01-01_res-0.25_levels-13_steps-01.nc'  # valid_dataset_file_options[-1]  # TODO: select one file
+dataset_file = 'source-fake_date-2022-01-01_res-0.25_levels-13_steps-01.nc'  # TODO: use self constructed nc file
 print("dataset_file:", dataset_file)
 
 # @title Load weather data
