@@ -241,9 +241,9 @@ if __name__ == '__main__':
     geopotential_at_surface = xarray.open_dataset('geopotential_at_surface-0.25.nc')
     land_sea_mask = xarray.open_dataset('land_sea_mask-0.25.nc')
     
-    start_date = '20240101'  # '20240101'
+    start_date = '20240801'  # '20240101'
     end_date = '20241031'  # '20241031'
-    lead_time = 0.25  # 10 is too slow
+    lead_time = 0.5  # 10 is too slow
     horizon = 6
     steps = int(lead_time*24//horizon)
     
