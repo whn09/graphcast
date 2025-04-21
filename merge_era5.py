@@ -243,7 +243,7 @@ if __name__ == '__main__':
     
     start_date = '20240801'  # '20240101'
     end_date = '20240802'  # '20241031'
-    lead_time = 10
+    lead_time = 0.25  # 10 is too slow
     horizon = 6
     steps = lead_time*24//horizon
     
@@ -264,7 +264,7 @@ if __name__ == '__main__':
 
         merged_dss = []
         
-        for i in tqdm(range(steps)):
+        for i in tqdm(range(steps)+2):
             current_time = current_dt+pd.Timedelta(hours=horizon*i)
             current_time_str = current_time.strftime('%Y%m%d%H')
             upper_ds1 = xarray.open_dataset(f'/opt/dlami/nvme/upper/upper_{current_time_str}.nc')
@@ -287,7 +287,7 @@ if __name__ == '__main__':
 
         input_ds = get_input_ds(merged_dss, geopotential_at_surface, land_sea_mask)
 
-        input_ds.to_netcdf(f'dataset/source-era5_date-{current_dt_str}_res-0.25_levels-13_steps-{steps}.nc', engine='netcdf4')
+        input_ds.to_netcdf(f'dataset/source-era5_date-{current_dt_str}_res-0.25_levels-13_steps-{steps:.2d}.nc', engine='netcdf4')
         
         # results = compare_datasets(input_ds, ds)
         # print_comparison_results(results)
