@@ -291,3 +291,5 @@ if __name__ == '__main__':
         
         # results = compare_datasets(input_ds, ds)
         # print_comparison_results(results)
+        
+        current_dt = current_dt+pd.Timedelta(days=1)
