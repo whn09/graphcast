@@ -1,6 +1,8 @@
 import xarray
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
+from datetime import datetime, timedelta
 
 def merge_surface_upper(surface_ds, upper_ds):
     # 1. 重命名维度
@@ -231,73 +233,61 @@ def print_comparison_results(results):
             print(f"{var}: 平均差异 {diff['mean']:.2f}%, 最大差异 {diff['max']:.2f}%")
 
 if __name__ == '__main__':
-    ds = xarray.open_dataset("dataset/source-era5_date-2022-01-01_res-0.25_levels-13_steps-01.nc")
+    # ds = xarray.open_dataset("dataset/source-era5_date-2022-01-01_res-0.25_levels-13_steps-01.nc")
 
-    ds['geopotential_at_surface'].to_netcdf('geopotential_at_surface-0.25.nc')
-    ds['land_sea_mask'].to_netcdf('land_sea_mask-0.25.nc')
-
-    merged_dss = []
-
-    upper_ds1 = xarray.open_dataset('/opt/dlami/nvme/upper/upper_2022010100.nc')
-    surface_ds1 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010100.nc')
-    other_surface_dss = []
-    surface_ds1_1 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2021123119.nc')
-    other_surface_dss.append(surface_ds1_1)
-    surface_ds1_2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2021123120.nc')
-    other_surface_dss.append(surface_ds1_2)
-    surface_ds1_3 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2021123121.nc')
-    other_surface_dss.append(surface_ds1_3)
-    surface_ds1_4 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2021123122.nc')
-    other_surface_dss.append(surface_ds1_4)
-    surface_ds1_5 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2021123123.nc')
-    other_surface_dss.append(surface_ds1_5)
-    surface_ds1 = accumulate_precipitation(surface_ds1, other_surface_dss)
-    # print('surface_ds1:', surface_ds1.total_precipitation_6hr)
-    merged_ds1 = merge_surface_upper(surface_ds1, upper_ds1)
-    merged_dss.append(merged_ds1)
-
-    upper_ds2 = xarray.open_dataset('/opt/dlami/nvme/upper/upper_2022010106.nc')
-    surface_ds2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010106.nc')
-    other_surface_dss = []
-    surface_ds2_1 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010101.nc')
-    other_surface_dss.append(surface_ds2_1)
-    surface_ds2_2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010102.nc')
-    other_surface_dss.append(surface_ds2_2)
-    surface_ds2_3 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010103.nc')
-    other_surface_dss.append(surface_ds2_3)
-    surface_ds2_4 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010104.nc')
-    other_surface_dss.append(surface_ds2_4)
-    surface_ds2_5 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010105.nc')
-    other_surface_dss.append(surface_ds2_5)
-    surface_ds2 = accumulate_precipitation(surface_ds2, other_surface_dss)
-    # print('surface_ds2:', surface_ds2.total_precipitation_6hr)
-    merged_ds2 = merge_surface_upper(surface_ds2, upper_ds2)
-    merged_dss.append(merged_ds2)
-
-    upper_ds3 = xarray.open_dataset('/opt/dlami/nvme/upper/upper_2022010112.nc')
-    surface_ds3 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010112.nc')
-    other_surface_dss = []
-    surface_ds3_1 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010107.nc')
-    other_surface_dss.append(surface_ds3_1)
-    surface_ds3_2 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010108.nc')
-    other_surface_dss.append(surface_ds3_2)
-    surface_ds3_3 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010109.nc')
-    other_surface_dss.append(surface_ds3_3)
-    surface_ds3_4 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010110.nc')
-    other_surface_dss.append(surface_ds3_4)
-    surface_ds3_5 = xarray.open_dataset('/opt/dlami/nvme/surface/surface_2022010111.nc')
-    other_surface_dss.append(surface_ds3_5)
-    surface_ds3 = accumulate_precipitation(surface_ds3, other_surface_dss)
-    # print('surface_ds3:', surface_ds3.total_precipitation_6hr)
-    merged_ds3 = merge_surface_upper(surface_ds3, upper_ds3)
-    merged_dss.append(merged_ds3)
-
+    # ds['geopotential_at_surface'].to_netcdf('geopotential_at_surface-0.25.nc')
+    # ds['land_sea_mask'].to_netcdf('land_sea_mask-0.25.nc')
+    
     geopotential_at_surface = xarray.open_dataset('geopotential_at_surface-0.25.nc')
     land_sea_mask = xarray.open_dataset('land_sea_mask-0.25.nc')
-
-    input_ds = get_input_ds(merged_dss, geopotential_at_surface, land_sea_mask)
-
-    input_ds.to_netcdf('dataset/source-fake_date-2022-01-01_res-0.25_levels-13_steps-01.nc', engine='netcdf4')
     
-    results = compare_datasets(input_ds, ds)
-    print_comparison_results(results)
+    start_date = '20240101'
+    end_date = '20240102'  # '20241031'
+    lead_time = 10
+    horizon = 6
+    steps = lead_time*24//horizon
+    
+    # 转换日期字符串为datetime对象
+    start_dt = datetime.strptime(start_date, '%Y%m%d')
+    end_dt = datetime.strptime(end_date, '%Y%m%d')
+    
+    # 存储所有结果
+    results = {}
+    
+    # 遍历每一天
+    current_dt = start_dt
+    while current_dt <= end_dt:
+        current_dt_str = current_dt.strftime('%Y-%m-%d')
+        print(f"处理起始日期: {current_dt_str}")
+        
+        # 处理当天及其后lead_time-1天的数据
+
+        merged_dss = []
+        
+        for i in tqdm(range(steps)):
+            current_time = current_dt+pd.Timedelta(hours=horizon*i)
+            current_time_str = current_time.strftime('%Y%m%d%H')
+            upper_ds1 = xarray.open_dataset(f'/opt/dlami/nvme/upper/upper_{current_time_str}.nc')
+            surface_ds1 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{current_time_str}.nc')
+            other_surface_dss = []
+            surface_ds1_1 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{current_time-pd.Timedelta(hours=5)}.nc')
+            other_surface_dss.append(surface_ds1_1)
+            surface_ds1_2 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{current_time-pd.Timedelta(hours=4)}.nc')
+            other_surface_dss.append(surface_ds1_2)
+            surface_ds1_3 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{current_time-pd.Timedelta(hours=3)}.nc')
+            other_surface_dss.append(surface_ds1_3)
+            surface_ds1_4 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{current_time-pd.Timedelta(hours=2)}.nc')
+            other_surface_dss.append(surface_ds1_4)
+            surface_ds1_5 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{current_time-pd.Timedelta(hours=1)}.nc')
+            other_surface_dss.append(surface_ds1_5)
+            surface_ds1 = accumulate_precipitation(surface_ds1, other_surface_dss)
+            # print('surface_ds1:', surface_ds1.total_precipitation_6hr)
+            merged_ds1 = merge_surface_upper(surface_ds1, upper_ds1)
+            merged_dss.append(merged_ds1)
+
+        input_ds = get_input_ds(merged_dss, geopotential_at_surface, land_sea_mask)
+
+        input_ds.to_netcdf(f'dataset/source-era5_date-{current_dt_str}_res-0.25_levels-13_steps-{steps}.nc', engine='netcdf4')
+        
+        # results = compare_datasets(input_ds, ds)
+        # print_comparison_results(results)
