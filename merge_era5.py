@@ -233,15 +233,15 @@ def print_comparison_results(results):
             print(f"{var}: 平均差异 {diff['mean']:.2f}%, 最大差异 {diff['max']:.2f}%")
 
 if __name__ == '__main__':
-    # ds = xarray.open_dataset("dataset/source-era5_date-2022-01-01_res-0.25_levels-13_steps-01.nc")
+    ds = xarray.open_dataset("dataset/source-era5_date-2022-01-01_res-0.25_levels-13_steps-01.nc")
 
-    # ds['geopotential_at_surface'].to_netcdf('geopotential_at_surface-0.25.nc')
-    # ds['land_sea_mask'].to_netcdf('land_sea_mask-0.25.nc')
+    ds['geopotential_at_surface'].to_netcdf('geopotential_at_surface-0.25.nc')
+    ds['land_sea_mask'].to_netcdf('land_sea_mask-0.25.nc')
     
     geopotential_at_surface = xarray.open_dataset('geopotential_at_surface-0.25.nc')
     land_sea_mask = xarray.open_dataset('land_sea_mask-0.25.nc')
     
-    start_date = '20240801'  # '20240101'
+    start_date = '20240101'  # '20240101'
     end_date = '20241031'  # '20241031'
     lead_time = 0.5  # 10 is too slow
     horizon = 6
