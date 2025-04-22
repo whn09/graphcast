@@ -30,3 +30,4 @@ python graphcast_multi_demo.py
 
 # s5cmd sync /opt/dlami/nvme/surface/ s3://datalab/nsf-ncar-era5/surface/
 # s5cmd sync /opt/dlami/nvme/upper/ s3://datalab/nsf-ncar-era5/upper/
+# s5cmd sync /home/ubuntu/graphcast/dataset/ s3://datalab/graphcast/dataset/
