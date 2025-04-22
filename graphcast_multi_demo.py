@@ -106,14 +106,15 @@ def data_valid_for_model(
 # print('valid_dataset_file_options:', valid_dataset_file_options)
 # dataset_file = valid_dataset_file_options[1]	# TODO: select one file
 # dataset_file = 'source-hres_date-2022-01-01_res-0.25_levels-13_steps-04.nc'
-dataset_file = 'source-fake_date-2022-01-01_res-0.25_levels-13_steps-01.nc'	# TODO: use self constructed nc file
+# dataset_file = 'source-fake_date-2022-01-01_res-0.25_levels-13_steps-01.nc'	# TODO: use self constructed nc file
+dataset_file = 'source-era5_date-2024-08-01_res-0.25_levels-13_steps-02.nc'	# TODO: use self constructed nc file
 print("dataset_file:", dataset_file)
 
 # @title Load weather data
 
-if not data_valid_for_model(dataset_file, model_config, task_config):
-	raise ValueError(
-			"Invalid dataset file, rerun the cell above and choose a valid dataset file.")
+# if not data_valid_for_model(dataset_file, model_config, task_config):
+# 	raise ValueError(
+# 			"Invalid dataset file, rerun the cell above and choose a valid dataset file.")
 
 # with gcs_bucket.blob(f"dataset/{dataset_file.value}").open("rb") as f:
 # with open(f"dataset/{dataset_file}", "rb") as f:
@@ -308,6 +309,11 @@ def calculate_metrics(pred_ds, true_ds):
 				pred_var.squeeze(), 
 				true_var.squeeze()
 			)
+   
+	metrics['wind_speed_surface'] = calculate_single_metric(
+		np.sqrt(pred_ds['10m_u_component_of_wind'].squeeze()**2+pred_ds['10m_v_component_of_wind'].squeeze()**2), 
+		np.sqrt(true_ds['10m_u_component_of_wind'].squeeze()**2+true_ds['10m_v_component_of_wind'].squeeze()**2)
+	)
 		
 	return metrics
 
@@ -474,6 +480,10 @@ for i in range(eval_steps):
     rmse = metrics['10m_v_component_of_wind']['rmse']
     acc = metrics['10m_v_component_of_wind']['acc']
     print(f'10m_v_component_of_wind: rmse={rmse}, acc={acc}')
+    
+    rmse = metrics['wind_speed_surface']['rmse']
+    acc = metrics['wind_speed_surface']['acc']
+    print(f'wind_speed_surface: rmse={rmse}, acc={acc}')
 
 	# # 对于有level的变量
 	# # 访问特定level的指标

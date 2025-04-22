@@ -175,12 +175,12 @@ def process_month(select_month):
             select_surface_ds = surface_ds.sel(time=select_hour_datetime)
             select_surface_ds.to_netcdf(f'surface/surface_{select_hour}.nc')
             
-            # 将结果保存到S3
-            buffer = io.BytesIO()
-            torch.save(select_surface_ds, buffer)
-            buffer.seek(0)
-            with s3.open(f's3://{s3_bucket}/{s3_prefix}/surface/surface_{select_hour}.nc', 'wb') as f:
-                f.write(buffer.getvalue())
+            # # 将结果保存到S3
+            # buffer = io.BytesIO()
+            # torch.save(select_surface_ds, buffer)
+            # buffer.seek(0)
+            # with s3.open(f's3://{s3_bucket}/{s3_prefix}/surface/surface_{select_hour}.nc', 'wb') as f:
+            #     f.write(buffer.getvalue())
                 
 def process_date(select_date):
     select_month = select_date[:6]
@@ -236,12 +236,12 @@ def process_date(select_date):
         select_upper_ds = upper_ds.sel(time=select_hour_datetime)
         select_upper_ds.to_netcdf(f'upper/upper_{select_hour}.nc')
         
-        # 将结果保存到S3
-        buffer = io.BytesIO()
-        torch.save(select_upper_ds, buffer)
-        buffer.seek(0)
-        with s3.open(f's3://{s3_bucket}/{s3_prefix}/upper/upper_{select_hour}.nc', 'wb') as f:
-            f.write(buffer.getvalue())
+        # # 将结果保存到S3
+        # buffer = io.BytesIO()
+        # torch.save(select_upper_ds, buffer)
+        # buffer.seek(0)
+        # with s3.open(f's3://{s3_bucket}/{s3_prefix}/upper/upper_{select_hour}.nc', 'wb') as f:
+        #     f.write(buffer.getvalue())
 
 
 s3_bucket = "datalab"
@@ -249,8 +249,10 @@ s3_prefix = "nsf-ncar-era5"
 
 pressure_levels = [1000, 925, 850, 700, 600,
                    500, 400, 300, 250, 200, 150, 100, 50]
-startDate = '20150101'
-endDate = '20241231'
+# startDate = '20150101'
+# endDate = '20241231'
+startDate = '20240101'
+endDate = '20240731'
 select_dates = list(pd.date_range(start=startDate, end=endDate, freq='1D'))
 select_dates = [date.strftime('%Y%m%d') for date in select_dates]
 # select_months = set([select_date[:6] for select_date in select_dates])
@@ -263,12 +265,12 @@ print('select_months:', len(select_months))
 os.system('mkdir -p surface')
 os.system('mkdir -p upper')
 
-# 设置进程数，可以根据你的CPU核心数进行调整
-num_processes = 60  # mp.cpu_count()  # 使用所有可用的CPU核心
+# # 设置进程数，可以根据你的CPU核心数进行调整
+# num_processes = 60  # mp.cpu_count()  # 使用所有可用的CPU核心
 
-# 使用进程池并行处理
-with mp.Pool(num_processes) as pool:
-    list(tqdm(pool.imap(process_month, select_months), total=len(select_months)))
+# # 使用进程池并行处理
+# with mp.Pool(num_processes) as pool:
+#     list(tqdm(pool.imap(process_month, select_months), total=len(select_months)))
 
 # 设置进程数，可以根据你的CPU核心数进行调整
 num_processes = 60  # mp.cpu_count()  # 使用所有可用的CPU核心
