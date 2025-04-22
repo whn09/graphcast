@@ -265,7 +265,7 @@ run_forward_jitted = drop_state(with_params(jax.jit(with_configs(
 # print("Targets: ", eval_targets.dims.mapping)
 # print("Forcings:", eval_forcings.dims.mapping)
 
-def calculate_metrics(pred_ds, true_ds):
+def calculate_metrics(pred_ds, true_ds, custom_mask_path=None):
     """
     计算每个变量的RMSE和ACC，对有level的变量分别计算每个level的指标
     
@@ -302,7 +302,8 @@ def calculate_metrics(pred_ds, true_ds):
                 # 计算该level的指标
                 metrics[var]['by_level'][int(lev)] = calculate_single_metric(
                     pred_level.squeeze(), 
-                    true_level.squeeze()
+                    true_level.squeeze(),
+                    custom_mask_path
                 )
                         
             # 计算所有level的平均指标
@@ -314,19 +315,62 @@ def calculate_metrics(pred_ds, true_ds):
             # 对没有level的变量直接计算
             metrics[var] = calculate_single_metric(
                 pred_var.squeeze(), 
-                true_var.squeeze()
+                true_var.squeeze(),
+                custom_mask_path
             )
    
     metrics['wind_speed_surface'] = calculate_single_metric(
         np.sqrt(pred_ds['10m_u_component_of_wind'].squeeze()**2+pred_ds['10m_v_component_of_wind'].squeeze()**2), 
-        np.sqrt(true_ds['10m_u_component_of_wind'].squeeze()**2+true_ds['10m_v_component_of_wind'].squeeze()**2)
+        np.sqrt(true_ds['10m_u_component_of_wind'].squeeze()**2+true_ds['10m_v_component_of_wind'].squeeze()**2),
+        custom_mask_path
     )
         
     return metrics
 
-def calculate_single_metric(pred, true):
+# def calculate_single_metric(pred, true):
+#     """
+#     计算单个字段的RMSE和ACC
+    
+#     Parameters:
+#     -----------
+#     pred : xarray.DataArray
+#         预测值
+#     true : xarray.DataArray
+#         真实值
+        
+#     Returns:
+#     --------
+#     dict
+#             包含RMSE和ACC的字典
+#     """
+#     # 确保数据形状匹配
+#     if pred.shape != true.shape:
+#         raise ValueError(f"Shape mismatch: pred {pred.shape} vs true {true.shape}")
+        
+#     # 去除batch维度如果存在
+#     if 'batch' in pred.dims:
+#         pred = pred.squeeze('batch')
+#         true = true.squeeze('batch')
+        
+#     # 将数据转换为numpy数组并展平
+#     pred_flat = pred.values.flatten()
+#     true_flat = true.values.flatten()
+        
+#     # 计算RMSE
+#     rmse = np.sqrt(np.mean((pred_flat - true_flat) ** 2))
+        
+#     # 计算ACC (Anomaly Correlation Coefficient)
+#     pred_anom = pred_flat - np.mean(pred_flat)
+#     true_anom = true_flat - np.mean(true_flat)
+        
+#     # 使用scipy.stats计算相关系数
+#     acc, _ = stats.pearsonr(pred_anom, true_anom)
+        
+#     return {'rmse': rmse, 'acc': acc}
+
+def calculate_single_metric(pred, true, custom_mask_path=None):
     """
-    计算单个字段的RMSE和ACC
+    计算单个字段的RMSE和ACC，支持自定义掩码
     
     Parameters:
     -----------
@@ -334,11 +378,13 @@ def calculate_single_metric(pred, true):
         预测值
     true : xarray.DataArray
         真实值
+    custom_mask_path : str, optional
+        自定义掩码的路径，默认为None。掩码为1的位置会被计算，0的位置会被忽略
         
     Returns:
     --------
     dict
-            包含RMSE和ACC的字典
+        包含RMSE和ACC的字典
     """
     # 确保数据形状匹配
     if pred.shape != true.shape:
@@ -348,10 +394,39 @@ def calculate_single_metric(pred, true):
     if 'batch' in pred.dims:
         pred = pred.squeeze('batch')
         true = true.squeeze('batch')
+    
+    # 获取预测和真实值的numpy数组
+    pred_values = pred.values
+    true_values = true.values
+    
+    # 加载自定义掩码（如果提供）
+    if custom_mask_path:
+        custom_mask = np.load(custom_mask_path)
         
-    # 将数据转换为numpy数组并展平
-    pred_flat = pred.values.flatten()
-    true_flat = true.values.flatten()
+        # 确保掩码形状与数据匹配
+        if custom_mask.shape != pred_values.shape[-2:]:  # 假设最后两个维度是空间维度
+            raise ValueError(f"Mask shape {custom_mask.shape} does not match spatial dimensions {pred_values.shape[-2:]}")
+        
+        # 创建适用于整个数据的掩码（考虑时间维度）
+        if len(pred_values.shape) > 2:  # 如果有时间维度
+            # 扩展掩码以匹配数据维度
+            full_mask = np.zeros_like(pred_values, dtype=bool)
+            for i in range(pred_values.shape[0]):  # 假设第一个维度是时间
+                full_mask[i] = custom_mask > 0
+        else:
+            full_mask = custom_mask > 0
+            
+        # 应用掩码
+        pred_flat = pred_values[full_mask].flatten()
+        true_flat = true_values[full_mask].flatten()
+    else:
+        # 不使用掩码，直接展平
+        pred_flat = pred_values.flatten()
+        true_flat = true_values.flatten()
+    
+    # 确保有足够的数据点进行计算
+    if len(pred_flat) == 0:
+        return {'rmse': np.nan, 'acc': np.nan}
         
     # 计算RMSE
     rmse = np.sqrt(np.mean((pred_flat - true_flat) ** 2))
@@ -449,6 +524,9 @@ end_date = datetime(2024, 10, 21)  # datetime(2024, 10, 21)
 # 计算总天数
 total_days = (end_date - start_date).days + 1
 eval_steps = 2  # 40
+use_custom_mask = True
+if use_custom_mask:
+    custom_mask_path = '/opt/dlami/nvme/aux_data/custom_mask.npy'
 
 rmses_by_step = {}
 accs_by_step = {}
@@ -487,7 +565,7 @@ for i in tqdm(range(total_days)):
         # all_predictions.append(predictions)
         
         # 计算指标
-        metrics = calculate_metrics(predictions, eval_targets)
+        metrics = calculate_metrics(predictions, eval_targets, custom_mask_path)
 
         # 打印结果
         # print_metrics(metrics)
