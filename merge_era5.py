@@ -78,9 +78,12 @@ def accumulate_precipitation(base_ds, other_datasets):
     # 创建副本以避免修改原始数据
     result_ds = base_ds.copy()
     
-    # 累加每个数据集的降水量
-    for ds in other_datasets:
-        result_ds['total_precipitation_6hr'].values += ds['total_precipitation_6hr'].values
+    # 累加每个数据集的降水量，不要当前小时的降水量，而是要之前6小时的降水量总和
+    for i, ds in enumerate(other_datasets):
+        if i == 0:
+            result_ds['total_precipitation_6hr'].values = ds['total_precipitation_6hr'].values
+        else:
+            result_ds['total_precipitation_6hr'].values += ds['total_precipitation_6hr'].values
     
     return result_ds
 
@@ -270,6 +273,9 @@ if __name__ == '__main__':
             upper_ds1 = xarray.open_dataset(f'/opt/dlami/nvme/upper/upper_{current_time_str}.nc')
             surface_ds1 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{current_time_str}.nc')
             other_surface_dss = []
+            time_str_0 = (current_time-pd.Timedelta(hours=6)).strftime('%Y%m%d%H')
+            surface_ds1_0 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{time_str_0}.nc')
+            other_surface_dss.append(surface_ds1_0)
             time_str_1 = (current_time-pd.Timedelta(hours=5)).strftime('%Y%m%d%H')
             surface_ds1_1 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{time_str_1}.nc')
             other_surface_dss.append(surface_ds1_1)
