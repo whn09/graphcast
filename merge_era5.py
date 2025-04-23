@@ -241,7 +241,7 @@ if __name__ == '__main__':
     geopotential_at_surface = xarray.open_dataset('geopotential_at_surface-0.25.nc')
     land_sea_mask = xarray.open_dataset('land_sea_mask-0.25.nc')
     
-    start_date = '20240101'  # '20240101'
+    start_date = '20240510'  # '20240101'
     end_date = '20241031'  # '20241031'
     lead_time = 0.5  # 10 is too slow
     horizon = 6
@@ -270,15 +270,20 @@ if __name__ == '__main__':
             upper_ds1 = xarray.open_dataset(f'/opt/dlami/nvme/upper/upper_{current_time_str}.nc')
             surface_ds1 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{current_time_str}.nc')
             other_surface_dss = []
-            surface_ds1_1 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{(current_time-pd.Timedelta(hours=5)).strftime('%Y%m%d%H')}.nc')
+            time_str_1 = (current_time-pd.Timedelta(hours=5)).strftime('%Y%m%d%H')
+            surface_ds1_1 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{time_str_1}.nc')
             other_surface_dss.append(surface_ds1_1)
-            surface_ds1_2 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{(current_time-pd.Timedelta(hours=4)).strftime('%Y%m%d%H')}.nc')
+            time_str_2 = (current_time-pd.Timedelta(hours=4)).strftime('%Y%m%d%H')
+            surface_ds1_2 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{time_str_2}.nc')
             other_surface_dss.append(surface_ds1_2)
-            surface_ds1_3 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{(current_time-pd.Timedelta(hours=3)).strftime('%Y%m%d%H')}.nc')
+            time_str_3 = (current_time-pd.Timedelta(hours=3)).strftime('%Y%m%d%H')
+            surface_ds1_3 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{time_str_3}.nc')
             other_surface_dss.append(surface_ds1_3)
-            surface_ds1_4 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{(current_time-pd.Timedelta(hours=2)).strftime('%Y%m%d%H')}.nc')
+            time_str_4 = (current_time-pd.Timedelta(hours=2)).strftime('%Y%m%d%H')
+            surface_ds1_4 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{time_str_4}.nc')
             other_surface_dss.append(surface_ds1_4)
-            surface_ds1_5 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{(current_time-pd.Timedelta(hours=1)).strftime('%Y%m%d%H')}.nc')
+            time_str_5 = (current_time-pd.Timedelta(hours=1)).strftime('%Y%m%d%H')
+            surface_ds1_5 = xarray.open_dataset(f'/opt/dlami/nvme/surface/surface_{time_str_5}.nc')
             other_surface_dss.append(surface_ds1_5)
             surface_ds1 = accumulate_precipitation(surface_ds1, other_surface_dss)
             # print('surface_ds1:', surface_ds1.total_precipitation_6hr)
@@ -287,7 +292,7 @@ if __name__ == '__main__':
 
         input_ds = get_input_ds(merged_dss, geopotential_at_surface, land_sea_mask)
 
-        input_ds.to_netcdf(f'dataset/source-era5_date-{current_dt_str}_res-0.25_levels-13_steps-{steps:02d}.nc', engine='netcdf4')
+        input_ds.to_netcdf(f'dataset/source-era5new_date-{current_dt_str}_res-0.25_levels-13_steps-{steps:02d}.nc', engine='netcdf4')
         
         # results = compare_datasets(input_ds, ds)
         # print_comparison_results(results)
