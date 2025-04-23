@@ -22,7 +22,7 @@
 # pip install s5cmd
 # s5cmd cp s3://datalab/nsf-ncar-era5/surface/surface_*.nc /opt/dlami/nvme/surface/
 # s5cmd cp s3://datalab/nsf-ncar-era5/upper/upper_*.nc /opt/dlami/nvme/upper/
-# s5cmd cp s3://datalab/graphcast/dataset/*.nc /home/ubuntu/graphcast/dataset/
+# s5cmd cp s3://datalab/graphcast/dataset/source-era5new_*.nc /home/ubuntu/graphcast/dataset/
 
 # python merge_era5.py
 

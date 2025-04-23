@@ -319,9 +319,13 @@ def calculate_metrics(pred_ds, true_ds, custom_mask_path=None):
                 custom_mask_path
             )
    
+    pred_wind_speed = np.sqrt(pred_ds['10m_u_component_of_wind'].squeeze()**2+pred_ds['10m_v_component_of_wind'].squeeze()**2)
+    true_wind_speed = np.sqrt(true_ds['10m_u_component_of_wind'].squeeze()**2+true_ds['10m_v_component_of_wind'].squeeze()**2)
+    # np.savetxt('pred_wind_speed.txt', pred_wind_speed)
+    # np.savetxt('true_wind_speed.txt', true_wind_speed)
     metrics['wind_speed_surface'] = calculate_single_metric(
-        np.sqrt(pred_ds['10m_u_component_of_wind'].squeeze()**2+pred_ds['10m_v_component_of_wind'].squeeze()**2), 
-        np.sqrt(true_ds['10m_u_component_of_wind'].squeeze()**2+true_ds['10m_v_component_of_wind'].squeeze()**2),
+        pred_wind_speed, 
+        true_wind_speed,
         custom_mask_path
     )
         
@@ -401,7 +405,7 @@ def calculate_single_metric(pred, true, custom_mask_path=None):
     
     # 加载自定义掩码（如果提供）
     if custom_mask_path:
-        custom_mask = np.load(custom_mask_path)
+        custom_mask = np.flipud(np.load(custom_mask_path))  # 需要上下翻转一下custom mask，因为graphcast是90到-90，而盘古是-90到90
         
         # 确保掩码形状与数据匹配
         if custom_mask.shape != pred_values.shape[-2:]:  # 假设最后两个维度是空间维度
@@ -520,7 +524,7 @@ def copy_static_fields(pred_ds, example_batch):
 
 
 start_date = datetime(2024, 1, 2)
-end_date = datetime(2024, 4, 30)  # datetime(2024, 10, 21)
+end_date = datetime(2024, 10, 21)  # datetime(2024, 10, 21)
 # 计算总天数
 total_days = (end_date - start_date).days + 1
 eval_steps = 2  # 40
@@ -538,6 +542,9 @@ for i in tqdm(range(total_days)):
     example_batch = xarray.load_dataset(f"dataset/{dataset_file}").compute()
 
     assert example_batch.dims["time"] >= 3    # 2 for input, >=1 for targets
+    
+    # wind_speed = np.sqrt(example_batch.isel(time=-1)['10m_u_component_of_wind'].values**2+example_batch.isel(time=-1)['10m_v_component_of_wind'].values**2)
+    # print(example_batch.isel(time=-1).datetime, 'wind_speed:', wind_speed)
 
     # all_predictions = []
     for i in range(eval_steps):
