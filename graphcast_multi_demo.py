@@ -519,8 +519,8 @@ def copy_static_fields(pred_ds, example_batch):
     return pred_ds
 
 
-start_date = datetime(2024, 1, 1)
-end_date = datetime(2024, 10, 21)  # datetime(2024, 10, 21)
+start_date = datetime(2024, 1, 2)
+end_date = datetime(2024, 4, 30)  # datetime(2024, 10, 21)
 # 计算总天数
 total_days = (end_date - start_date).days + 1
 eval_steps = 2  # 40
@@ -534,7 +534,7 @@ for i in tqdm(range(total_days)):
     current_date = start_date + timedelta(days=i)
     date_str = current_date.strftime("%Y-%m-%d")
 
-    dataset_file = f'source-era5_date-{date_str}_res-0.25_levels-13_steps-02.nc'  # TODO: use self constructed nc file
+    dataset_file = f'source-era5new_date-{date_str}_res-0.25_levels-13_steps-02.nc'  # TODO: use self constructed nc file
     example_batch = xarray.load_dataset(f"dataset/{dataset_file}").compute()
 
     assert example_batch.dims["time"] >= 3    # 2 for input, >=1 for targets
