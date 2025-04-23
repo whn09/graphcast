@@ -45,10 +45,10 @@ logging.getLogger('absl').setLevel(logging.ERROR)
 
 @contextmanager
 def timer(name):
-        start = time.time()
-        yield
-        end = time.time()
-        # print(f"{name}: {end - start:.2f} seconds")
+    start = time.time()
+    yield
+    end = time.time()
+    # print(f"{name}: {end - start:.2f} seconds")
 
 print("JAX devices:", jax.devices())
 print("Default backend:", jax.default_backend())
@@ -60,10 +60,10 @@ def parse_file_parts(file_name):
 # @title Choose the model
 
 params_file_options = [
-        # name for blob in gcs_bucket.list_blobs(prefix="params/")
-        # if (name := blob.name.removeprefix("params/"))]    # Drop empty string.
-        name for blob in glob.glob("params/**", recursive=True)
-        if (name := blob.replace("params/", ""))]    # Drop empty string.
+    # name for blob in gcs_bucket.list_blobs(prefix="params/")
+    # if (name := blob.name.removeprefix("params/"))]    # Drop empty string.
+    name for blob in glob.glob("params/**", recursive=True)
+    if (name := blob.replace("params/", ""))]    # Drop empty string.
 # print("params_file_options:", params_file_options)
 
 # params_file = params_file_options[1]    # TODO: 0 (GraphCast_small), 1 (GraphCast), 2 (GraphCast_operational)
@@ -74,7 +74,7 @@ print("params_file:", params_file)
 
 # with gcs_bucket.blob(f"params/{params_file.value}").open("rb") as f:
 with open(f"params/{params_file}", "rb") as f:
-        ckpt = checkpoint.load(f, graphcast.CheckPoint)
+    ckpt = checkpoint.load(f, graphcast.CheckPoint)
 params = ckpt.params
 state = {}
 
@@ -89,10 +89,10 @@ task_config = ckpt.task_config
 # @title Get and filter the list of available example datasets
 
 # dataset_file_options = [
-#         # name for blob in gcs_bucket.list_blobs(prefix="dataset/")
-#         # if (name := blob.name.removeprefix("dataset/"))]    # Drop empty string.
-#         name for blob in glob.glob("dataset/**", recursive=True)
-#         if (name := blob.replace("dataset/", ""))]    # Drop empty string.
+#     # name for blob in gcs_bucket.list_blobs(prefix="dataset/")
+#     # if (name := blob.name.removeprefix("dataset/"))]    # Drop empty string.
+#     name for blob in glob.glob("dataset/**", recursive=True)
+#     if (name := blob.replace("dataset/", ""))]    # Drop empty string.
 
 # def data_valid_for_model(
 #         file_name: str, model_config: graphcast.ModelConfig, task_config: graphcast.TaskConfig):
@@ -250,8 +250,8 @@ init_jitted = jax.jit(with_configs(run_forward.init))
 #             targets_template=train_targets,
 #             forcings=train_forcings)
 
-loss_fn_jitted = drop_state(with_params(jax.jit(with_configs(loss_fn.apply))))
-grads_fn_jitted = with_params(jax.jit(with_configs(grads_fn)))
+# loss_fn_jitted = drop_state(with_params(jax.jit(with_configs(loss_fn.apply))))
+# grads_fn_jitted = with_params(jax.jit(with_configs(grads_fn)))
 run_forward_jitted = drop_state(with_params(jax.jit(with_configs(
         run_forward.apply))))
 
@@ -264,72 +264,6 @@ run_forward_jitted = drop_state(with_params(jax.jit(with_configs(
 # print("Inputs:    ", eval_inputs.dims.mapping)
 # print("Targets: ", eval_targets.dims.mapping)
 # print("Forcings:", eval_forcings.dims.mapping)
-
-def calculate_metrics(pred_ds, true_ds, custom_mask_path=None):
-    """
-    计算每个变量的RMSE和ACC，对有level的变量分别计算每个level的指标
-    
-    Parameters:
-    -----------
-    pred_ds : xarray.Dataset
-        预测数据集
-    true_ds : xarray.Dataset
-        真实数据集
-        
-    Returns:
-    --------
-    dict
-        包含每个变量（和level）的RMSE和ACC的字典
-    """
-    metrics = {}
-        
-    # 获取所有变量名
-    variables = list(pred_ds.data_vars)
-        
-    for var in variables:
-        pred_var = pred_ds[var]
-        true_var = true_ds[var]
-
-        # 检查变量是否包含level维度
-        if 'level' in pred_var.dims:
-            metrics[var] = {'by_level': {}}
-                        
-            # 对每个level分别计算
-            for lev in pred_var.level.values:
-                pred_level = pred_var.sel(level=lev)
-                true_level = true_var.sel(level=lev)
-                                
-                # 计算该level的指标
-                metrics[var]['by_level'][int(lev)] = calculate_single_metric(
-                    pred_level.squeeze(), 
-                    true_level.squeeze(),
-                    custom_mask_path
-                )
-                        
-            # 计算所有level的平均指标
-            all_rmse = np.mean([m['rmse'] for m in metrics[var]['by_level'].values()])
-            all_acc = np.mean([m['acc'] for m in metrics[var]['by_level'].values()])
-            metrics[var]['all_levels'] = {'rmse': all_rmse, 'acc': all_acc}
-                        
-        else:
-            # 对没有level的变量直接计算
-            metrics[var] = calculate_single_metric(
-                pred_var.squeeze(), 
-                true_var.squeeze(),
-                custom_mask_path
-            )
-   
-    pred_wind_speed = np.sqrt(pred_ds['10m_u_component_of_wind'].squeeze()**2+pred_ds['10m_v_component_of_wind'].squeeze()**2)
-    true_wind_speed = np.sqrt(true_ds['10m_u_component_of_wind'].squeeze()**2+true_ds['10m_v_component_of_wind'].squeeze()**2)
-    # np.savetxt('pred_wind_speed.txt', pred_wind_speed)
-    # np.savetxt('true_wind_speed.txt', true_wind_speed)
-    metrics['wind_speed_surface'] = calculate_single_metric(
-        pred_wind_speed, 
-        true_wind_speed,
-        custom_mask_path
-    )
-        
-    return metrics
 
 # def calculate_single_metric(pred, true):
 #     """
@@ -444,6 +378,72 @@ def calculate_single_metric(pred, true, custom_mask_path=None):
         
     return {'rmse': rmse, 'acc': acc}
 
+def calculate_metrics(pred_ds, true_ds, custom_mask_path=None):
+    """
+    计算每个变量的RMSE和ACC，对有level的变量分别计算每个level的指标
+    
+    Parameters:
+    -----------
+    pred_ds : xarray.Dataset
+        预测数据集
+    true_ds : xarray.Dataset
+        真实数据集
+        
+    Returns:
+    --------
+    dict
+        包含每个变量（和level）的RMSE和ACC的字典
+    """
+    metrics = {}
+        
+    # 获取所有变量名
+    variables = list(pred_ds.data_vars)
+        
+    for var in variables:
+        pred_var = pred_ds[var]
+        true_var = true_ds[var]
+
+        # 检查变量是否包含level维度
+        if 'level' in pred_var.dims:
+            metrics[var] = {'by_level': {}}
+                        
+            # 对每个level分别计算
+            for lev in pred_var.level.values:
+                pred_level = pred_var.sel(level=lev)
+                true_level = true_var.sel(level=lev)
+                                
+                # 计算该level的指标
+                metrics[var]['by_level'][int(lev)] = calculate_single_metric(
+                    pred_level.squeeze(), 
+                    true_level.squeeze(),
+                    custom_mask_path
+                )
+                        
+            # 计算所有level的平均指标
+            all_rmse = np.mean([m['rmse'] for m in metrics[var]['by_level'].values()])
+            all_acc = np.mean([m['acc'] for m in metrics[var]['by_level'].values()])
+            metrics[var]['all_levels'] = {'rmse': all_rmse, 'acc': all_acc}
+                        
+        else:
+            # 对没有level的变量直接计算
+            metrics[var] = calculate_single_metric(
+                pred_var.squeeze(), 
+                true_var.squeeze(),
+                custom_mask_path
+            )
+   
+    pred_wind_speed = np.sqrt(pred_ds['10m_u_component_of_wind'].squeeze()**2+pred_ds['10m_v_component_of_wind'].squeeze()**2)
+    true_wind_speed = np.sqrt(true_ds['10m_u_component_of_wind'].squeeze()**2+true_ds['10m_v_component_of_wind'].squeeze()**2)
+    # np.savetxt('pred_wind_speed.txt', pred_wind_speed)
+    # np.savetxt('true_wind_speed.txt', true_wind_speed)
+    metrics['wind_speed_surface'] = calculate_single_metric(
+        pred_wind_speed, 
+        true_wind_speed,
+        custom_mask_path
+    )
+        
+    return metrics
+
 def print_metrics(metrics):
     """
     打印评估指标
@@ -527,24 +527,49 @@ start_date = datetime(2024, 1, 2)
 end_date = datetime(2024, 10, 21)  # datetime(2024, 10, 21)
 # 计算总天数
 total_days = (end_date - start_date).days + 1
-eval_steps = 2  # 40
+eval_steps = 40  # 2, 40
 use_custom_mask = True
 if use_custom_mask:
     custom_mask_path = '/opt/dlami/nvme/aux_data/custom_mask.npy'
-
+else:
+    custom_mask_path = None
+    
 rmses_by_step = {}
 accs_by_step = {}
 for i in tqdm(range(total_days)):
-    current_date = start_date + timedelta(days=i)
-    date_str = current_date.strftime("%Y-%m-%d")
-
-    dataset_file = f'source-era5new_date-{date_str}_res-0.25_levels-13_steps-02.nc'  # TODO: use self constructed nc file
-    example_batch = xarray.load_dataset(f"dataset/{dataset_file}").compute()
+    example_batch = None
+    time_offset = 6 * 3600 * 1e9  # 6小时，以纳秒为单位
+    for j in range(eval_steps//4+1):
+        current_date = start_date + timedelta(days=i+j)
+        date_str = current_date.strftime("%Y-%m-%d")
+        dataset_file = f'source-era5new_date-{date_str}_res-0.25_levels-13_steps-02.nc'  # TODO: use self constructed nc file
+        # print('dataset_file:', dataset_file)
+        batch = xarray.load_dataset(f"dataset/{dataset_file}").compute()	
+        if example_batch is None:
+            example_batch = batch
+        else:
+            # 获取当前批次中的时间值
+            batch_times = batch['time'].values
+            # print('batch_times:', batch_times)
+            
+            # 计算新的时间起点：前一批次的最大时间 + 6小时
+            last_time = example_batch['time'].values.max()
+            time_shift = np.timedelta64(6, 'h')
+            
+            # 创建新的时间坐标
+            new_times = batch_times + last_time + time_shift
+            # print('new_times:', new_times)
+            
+            # 用新的时间坐标更新批次
+            batch = batch.assign_coords(time=new_times)
+            example_batch = xarray.concat([example_batch, batch], dim='time')
+            # TODO we have to deal with time
+            
+    if eval_steps>2:
+        example_batch['geopotential_at_surface'] = example_batch['geopotential_at_surface'].isel(time=0)
+        example_batch['land_sea_mask'] = example_batch['land_sea_mask'].isel(time=0)
 
     assert example_batch.dims["time"] >= 3    # 2 for input, >=1 for targets
-    
-    # wind_speed = np.sqrt(example_batch.isel(time=-1)['10m_u_component_of_wind'].values**2+example_batch.isel(time=-1)['10m_v_component_of_wind'].values**2)
-    # print(example_batch.isel(time=-1).datetime, 'wind_speed:', wind_speed)
 
     # all_predictions = []
     for i in range(eval_steps):
